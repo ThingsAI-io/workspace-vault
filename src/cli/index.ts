@@ -150,8 +150,8 @@ program
 program
   .command('mcp')
   .description('Start the MCP server')
-  .action(() => {
-    mcpCommand();
+  .action(async () => {
+    await mcpCommand();
   });
 
 // Global error handling

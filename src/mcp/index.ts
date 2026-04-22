@@ -1,1 +1,1 @@
-export {};
+export { createVaultMcpServer } from './server.js';

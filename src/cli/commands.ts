@@ -401,7 +401,18 @@ export function auditCommand(options: {
   }
 }
 
-export function mcpCommand(): void {
-  process.stderr.write('MCP server not yet implemented.\n');
-  process.exit(1);
+export async function mcpCommand(): Promise<void> {
+  const config = getConfig();
+  requireInit(config);
+  const engine = getEngine(config);
+  const session = getSession(config);
+
+  const { createVaultMcpServer } = await import('../mcp/index.js');
+  const { StdioServerTransport } = await import(
+    '@modelcontextprotocol/sdk/server/stdio.js'
+  );
+
+  const server = createVaultMcpServer(engine, session);
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 }
