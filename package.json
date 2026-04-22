@@ -1,0 +1,60 @@
+{
+  "name": "workspace-vault",
+  "version": "0.1.0",
+  "description": "Encrypted file vault with CLI and MCP server for AI agent access to private files",
+  "type": "module",
+  "license": "MIT",
+  "author": "ThingsAI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ThingsAI-io/workspace-vault.git"
+  },
+  "bin": {
+    "vault": "./dist/cli/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "vault",
+    "encryption",
+    "mcp",
+    "cli",
+    "age",
+    "ai-agent",
+    "privacy"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "age-encryption": "^0.3.0",
+    "better-sqlite3": "^12.9.0",
+    "commander": "^14.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.0",
+    "vitest": "^4.1.5"
+  }
+}
