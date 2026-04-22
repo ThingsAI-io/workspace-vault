@@ -161,6 +161,14 @@ Security is a core product feature, not an afterthought. These principles govern
 6. **Auditability** — 100% of read, write, search, unlock, and lock operations are recorded in the audit log with timestamp, operation type, and target path. No file content appears in the log.
 7. **Cross-platform** — the CLI and MCP server pass acceptance tests on macOS, Ubuntu (latest LTS), and Windows 11.
 
+## Technology
+
+**TypeScript on Node.js**, published as an **npm package**. The CLI is the entry point (`bin`); the MCP server runs as a child process or standalone.
+
+Key dependencies:
+- **`age-encryption`** — npm binding for the `age` encryption format (multi-recipient, well-audited)
+- **`@modelcontextprotocol/sdk`** — MCP server SDK for exposing vault operations as agent tools
+
 ## Risks & Open Questions
 
 1. **Cross-platform file permissions** — POSIX systems support restrictive file permissions (`0700`/`0600`). Windows doesn't have a direct equivalent. How do we enforce comparable access control on Windows?
