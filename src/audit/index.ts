@@ -1,1 +1,1 @@
-export {};
+export { AuditLogger } from './logger.js';
