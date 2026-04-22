@@ -6,12 +6,12 @@
 src/
   crypto/       — age encryption: encrypt/decrypt buffers, key generation, master key wrap/unwrap
   vault/        — vault init, file CRUD (encrypt/decrypt on disk), metadata (SQLite)
-  session/      — daemon/broker: holds master key in memory, local socket IPC
+  session/      — session file: master key persistence between CLI and MCP server
   audit/        — append-only audit log (SQLite table)
   security/     — path validation, input sanitization (Zod), output sanitization, file permissions
   config/       — vault config (~/.config/workspace-vault/config.json), vault path pointer
   cli/          — CLI commands (commander.js)
-  mcp/          — MCP server (thin wrapper, talks to daemon)
+  mcp/          — MCP server (thin wrapper, reads session file for master key)
   types.ts      — shared types and error definitions
   index.ts      — public API
 test/
@@ -21,19 +21,20 @@ test/
 
 ## Key Design Decisions
 
-### Unlock model: Daemon/broker
-- `vault unlock` prompts for passphrase, unwraps master key, starts a background daemon on a local socket (Unix) or named pipe (Windows)
-- The daemon holds the master key in memory — it never leaves this process
-- CLI commands and MCP server connect to the daemon for operations requiring the master key
-- `vault lock` tells the daemon to drop the key and shut down
-- Timeout: daemon auto-locks after configurable period (default 30 min)
-- CLI commands that only need metadata (list, status) work without the daemon
+### Unlock model: Session file
+- `vault unlock` prompts for passphrase, unwraps master key, writes it to a session file with restrictive permissions (POSIX 0600)
+- The MCP server reads the session file on demand when it needs the master key
+- `vault lock` deletes the session file, zeroing contents first (best-effort)
+- Timeout: session file includes a TTL timestamp; readers check expiry and treat expired sessions as locked
+- CLI commands that only need metadata (list, status) work without a session file
+- Session file location: `~/.config/workspace-vault/session` (same restrictive-permission config dir)
+- Same proven pattern as SSH agent sockets — simple, cross-platform, no extra processes
 
 ### Metadata: SQLite (via better-sqlite3)
 - Single SQLite database in the vault directory
 - Tables: files (metadata), keys (authorized key records)
 - Audit log: separate SQLite table (append-only by convention)
-- Daemon is the primary writer; CLI reads metadata directly for lock-safe operations
+- Both CLI and MCP server access SQLite directly for metadata operations
 
 ### Encrypted file storage
 - Each file stored as `<vault>/files/<uuid>.age` (age-encrypted blob)
@@ -45,7 +46,7 @@ test/
 - Passphrase → age identity via scrypt-based key derivation
 
 ### Config: Plain JSON
-- `~/.config/workspace-vault/config.json` — stores vault path, daemon socket path
+- `~/.config/workspace-vault/config.json` — stores vault path, session file path
 - Not encrypted for MVP (vault path is not treated as a high-value secret in MVP)
 - Restrictive file permissions (POSIX 0600)
 
@@ -99,12 +100,11 @@ test/
 - **audit**: SQLite audit log, event recording
 
 ### Phase 4: Session Layer (depends on Phase 2)
-- **session/daemon**: local socket/named pipe server, master key holder, timeout, lock/unlock protocol
-- **session/client**: client library for CLI + MCP to talk to daemon
+- **session**: SessionManager class — write/read/clear session file, TTL-based expiry, restrictive file permissions
 
 ### Phase 5: Interfaces (depends on Phase 3 + 4, parallelizable)
 - **CLI**: all commands using commander.js, interactive passphrase prompt
-- **MCP**: server setup with @modelcontextprotocol/sdk, tool definitions, locked-state errors
+- **MCP**: server setup with @modelcontextprotocol/sdk, tool definitions, reads session file for master key, locked-state errors
 
 ### Phase 6: Integration Tests (depends on Phase 5)
 - End-to-end CLI workflows

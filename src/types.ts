@@ -75,17 +75,17 @@ export class LastKeyError extends VaultError {
   }
 }
 
-export class DaemonNotRunningError extends VaultError {
-  constructor(message = 'Daemon not running or unreachable') {
-    super(message, 'DAEMON_NOT_RUNNING');
-    this.name = 'DaemonNotRunningError';
+export class SessionExpiredError extends VaultError {
+  constructor(message = 'Vault session has expired — run `vault unlock` again') {
+    super(message, 'SESSION_EXPIRED');
+    this.name = 'SessionExpiredError';
   }
 }
 
-export class DaemonError extends VaultError {
-  constructor(message = 'Daemon communication error') {
-    super(message, 'DAEMON_ERROR');
-    this.name = 'DaemonError';
+export class SessionFileError extends VaultError {
+  constructor(message = 'Session file error') {
+    super(message, 'SESSION_FILE_ERROR');
+    this.name = 'SessionFileError';
   }
 }
 
@@ -134,7 +134,7 @@ export interface AuditEntry {
 
 export interface VaultConfig {
   vaultPath: string;
-  socketPath: string;
+  sessionPath: string;
   version: number;
 }
 
@@ -221,26 +221,10 @@ export const AuditQuerySchema = z.object({
   operation: z.nativeEnum(OperationType).optional(),
 });
 
-// ── Daemon protocol ─────────────────────────────────────────────────────────
+// ── Session file types ───────────────────────────────────────────────────────
 
-export enum DaemonCommand {
-  UNLOCK = 'unlock',
-  LOCK = 'lock',
-  STATUS = 'status',
-  READ_FILE = 'read_file',
-  WRITE_FILE = 'write_file',
-  DELETE_FILE = 'delete_file',
-  GREP = 'grep',
-}
-
-export interface DaemonRequest {
-  command: DaemonCommand;
-  payload?: Record<string, unknown>;
-}
-
-export interface DaemonResponse {
-  success: boolean;
-  data?: unknown;
-  error?: string;
-  errorCode?: string;
+export interface SessionData {
+  masterKey: string;    // hex-encoded master key
+  expiresAt: string;    // ISO 8601 timestamp
+  createdAt: string;    // ISO 8601 timestamp
 }
