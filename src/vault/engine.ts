@@ -42,10 +42,7 @@ export class VaultEngine {
 
   // ── Init ────────────────────────────────────────────────────────────
 
-  static async init(
-    vaultPath: string,
-    passphrase: string,
-  ): Promise<VaultEngine> {
+  static async init(vaultPath: string, passphrase: string): Promise<VaultEngine> {
     // 1. Create vault directory structure
     fs.mkdirSync(vaultPath, { recursive: true });
     fs.mkdirSync(path.join(vaultPath, 'files'), { recursive: true });
@@ -57,8 +54,10 @@ export class VaultEngine {
 
     // 3. Wrap master key for the initial passphrase
     const salt = generateSalt();
-    const { publicKey: passphrasePublicKey, identity } =
-      await passphraseToIdentity(passphrase, salt);
+    const { publicKey: passphrasePublicKey, identity } = await passphraseToIdentity(
+      passphrase,
+      salt,
+    );
     const wrappedKey = await wrapMasterKeyWithPassphrase(privateKey, identity);
 
     // 4. Create engine and store initial key
@@ -143,8 +142,7 @@ export class VaultEngine {
     this.validatePath(vaultFilePath);
 
     const meta = this.store.getFile(vaultFilePath);
-    if (!meta)
-      throw new FileNotFoundError(`File not found: ${vaultFilePath}`);
+    if (!meta) throw new FileNotFoundError(`File not found: ${vaultFilePath}`);
 
     const blobPath = path.join(this.filesDir, `${meta.blobId}.age`);
     if (fs.existsSync(blobPath)) fs.unlinkSync(blobPath);
@@ -177,10 +175,7 @@ export class VaultEngine {
     }));
   }
 
-  async grepFiles(
-    pattern: string,
-    masterKey: string,
-  ): Promise<GrepResult[]> {
+  async grepFiles(pattern: string, masterKey: string): Promise<GrepResult[]> {
     const allFiles = this.store.getAllFiles();
     const results: GrepResult[] = [];
     const regex = new RegExp(pattern, 'gi');
@@ -211,17 +206,10 @@ export class VaultEngine {
 
   // ── Key management ──────────────────────────────────────────────────
 
-  async addKey(
-    passphrase: string,
-    label: string,
-    currentMasterKey: string,
-  ): Promise<KeyRecord> {
+  async addKey(passphrase: string, label: string, currentMasterKey: string): Promise<KeyRecord> {
     const salt = generateSalt();
     const { publicKey, identity } = await passphraseToIdentity(passphrase, salt);
-    const wrappedKey = await wrapMasterKeyWithPassphrase(
-      currentMasterKey,
-      identity,
-    );
+    const wrappedKey = await wrapMasterKeyWithPassphrase(currentMasterKey, identity);
 
     const record = {
       id: randomUUID(),
@@ -270,10 +258,7 @@ export class VaultEngine {
     for (const key of keys) {
       try {
         const { identity } = await passphraseToIdentity(passphrase, key.salt);
-        const masterKey = await unwrapMasterKey(
-          key.wrappedMasterKey,
-          identity,
-        );
+        const masterKey = await unwrapMasterKey(key.wrappedMasterKey, identity);
         this.audit.logEvent({
           operation: OperationType.UNLOCK,
           keyId: key.id,
@@ -300,9 +285,7 @@ export class VaultEngine {
   }
 
   getMasterPublicKey(): string {
-    return fs
-      .readFileSync(path.join(this.vaultPath, 'master.pub'), 'utf-8')
-      .trim();
+    return fs.readFileSync(path.join(this.vaultPath, 'master.pub'), 'utf-8').trim();
   }
 
   getAuditLogger(): AuditLogger {

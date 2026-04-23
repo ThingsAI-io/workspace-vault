@@ -3,15 +3,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { VaultEngine } from '../vault/index.js';
 import { SessionManager } from '../session/index.js';
 import { sanitizeOutput } from '../security/index.js';
-import {
-  VaultLockedError,
-  SessionExpiredError,
-  type FileMetadata,
-} from '../types.js';
+import { VaultLockedError, SessionExpiredError, type FileMetadata } from '../types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
-const LOCKED_MESSAGE =
-  'Vault is locked. Run `vault unlock` in your terminal to unlock.';
+const LOCKED_MESSAGE = 'Vault is locked. Run `vault unlock` in your terminal to unlock.';
 
 function getMasterKey(session: SessionManager): string {
   try {
@@ -42,10 +37,7 @@ function formatMetadata(files: FileMetadata[]): string {
     .join('\n');
 }
 
-export function createVaultMcpServer(
-  engine: VaultEngine,
-  session: SessionManager,
-): McpServer {
+export function createVaultMcpServer(engine: VaultEngine, session: SessionManager): McpServer {
   const server = new McpServer(
     { name: 'workspace-vault', version: '0.1.0' },
     { capabilities: { tools: {} } },
@@ -62,9 +54,7 @@ export function createVaultMcpServer(
         const masterKey = getMasterKey(session);
         const content = await engine.readFile(vaultPath, masterKey);
         return {
-          content: [
-            { type: 'text', text: sanitizeOutput(content.toString('utf-8')) },
-          ],
+          content: [{ type: 'text', text: sanitizeOutput(content.toString('utf-8')) }],
         };
       } catch (err) {
         return errorResult((err as Error).message);
@@ -80,10 +70,7 @@ export function createVaultMcpServer(
     {
       path: z.string().describe('Vault path for the new file'),
       content: z.string().describe('File content to encrypt and store'),
-      tags: z
-        .array(z.string())
-        .optional()
-        .describe('Optional tags for the file'),
+      tags: z.array(z.string()).optional().describe('Optional tags for the file'),
     },
     async ({ path: vaultPath, content, tags }): Promise<CallToolResult> => {
       try {
@@ -116,18 +103,13 @@ export function createVaultMcpServer(
     'vault_list_dir',
     'List files in the vault. Shows metadata (names, sizes, dates, tags). Works even when the vault is locked.',
     {
-      path: z
-        .string()
-        .optional()
-        .describe('Optional directory prefix to filter by'),
+      path: z.string().optional().describe('Optional directory prefix to filter by'),
     },
     ({ path: dirPath }): CallToolResult => {
       try {
         const files = engine.listFiles(dirPath);
         return {
-          content: [
-            { type: 'text', text: sanitizeOutput(formatMetadata(files)) },
-          ],
+          content: [{ type: 'text', text: sanitizeOutput(formatMetadata(files)) }],
         };
       } catch (err) {
         return errorResult((err as Error).message);
@@ -149,10 +131,7 @@ export function createVaultMcpServer(
           return { content: [{ type: 'text', text: 'No matches found.' }] };
         }
         const text = results
-          .map(
-            (r) =>
-              `${r.vaultPath}:${r.lineNumber}: ${sanitizeOutput(r.line)}`,
-          )
+          .map((r) => `${r.vaultPath}:${r.lineNumber}: ${sanitizeOutput(r.line)}`)
           .join('\n');
         return { content: [{ type: 'text', text }] };
       } catch (err) {
@@ -174,10 +153,7 @@ export function createVaultMcpServer(
           return { content: [{ type: 'text', text: 'No matches found.' }] };
         }
         const text = results
-          .map(
-            (r) =>
-              `${r.vaultPath} (${r.matchType}: ${sanitizeOutput(r.matchedValue)})`,
-          )
+          .map((r) => `${r.vaultPath} (${r.matchType}: ${sanitizeOutput(r.matchedValue)})`)
           .join('\n');
         return { content: [{ type: 'text', text }] };
       } catch (err) {

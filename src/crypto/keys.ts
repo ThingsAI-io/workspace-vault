@@ -1,15 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import {
-  generateIdentity,
-  identityToRecipient,
-} from 'age-encryption';
+import { generateIdentity, identityToRecipient } from 'age-encryption';
 import { InvalidKeyError } from '../types.js';
-import {
-  encrypt,
-  decrypt,
-  encryptWithPassphrase,
-  decryptWithPassphrase,
-} from './age.js';
+import { encrypt, decrypt, encryptWithPassphrase, decryptWithPassphrase } from './age.js';
 
 /**
  * Generate a new age keypair for use as a master key.
@@ -73,10 +65,7 @@ export async function wrapMasterKey(
  * If the identity starts with "passphrase:", it was created via
  * passphraseToIdentity and we use passphrase-based decryption.
  */
-export async function unwrapMasterKey(
-  wrappedKey: Buffer,
-  identity: string,
-): Promise<string> {
+export async function unwrapMasterKey(wrappedKey: Buffer, identity: string): Promise<string> {
   try {
     // If this is a passphrase-derived identity (from passphraseToIdentity),
     // use passphrase-based decryption.
@@ -89,9 +78,7 @@ export async function unwrapMasterKey(
     return plaintext.toString('utf-8');
   } catch (err) {
     if (err instanceof InvalidKeyError) throw err;
-    throw new InvalidKeyError(
-      err instanceof Error ? err.message : 'Failed to unwrap master key',
-    );
+    throw new InvalidKeyError(err instanceof Error ? err.message : 'Failed to unwrap master key');
   }
 }
 
@@ -102,8 +89,5 @@ export async function wrapMasterKeyWithPassphrase(
   masterPrivateKey: string,
   passphraseIdentity: string,
 ): Promise<Buffer> {
-  return encryptWithPassphrase(
-    Buffer.from(masterPrivateKey, 'utf-8'),
-    passphraseIdentity,
-  );
+  return encryptWithPassphrase(Buffer.from(masterPrivateKey, 'utf-8'), passphraseIdentity);
 }

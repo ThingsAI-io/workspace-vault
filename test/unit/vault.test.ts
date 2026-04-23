@@ -227,10 +227,7 @@ describe('VaultEngine', () => {
     });
 
     it('stores a master public key file', () => {
-      const pubKey = fs.readFileSync(
-        path.join(vaultDir, 'master.pub'),
-        'utf-8',
-      );
+      const pubKey = fs.readFileSync(path.join(vaultDir, 'master.pub'), 'utf-8');
       expect(pubKey.trim()).toMatch(/^age1/);
     });
 
@@ -253,9 +250,7 @@ describe('VaultEngine', () => {
 
     it('writeFile creates metadata with correct fields', async () => {
       const content = Buffer.from('data');
-      const meta = await engine.writeFile('test.bin', content, masterKey, [
-        'binary',
-      ]);
+      const meta = await engine.writeFile('test.bin', content, masterKey, ['binary']);
       expect(meta.vaultPath).toBe('test.bin');
       expect(meta.size).toBe(4);
       expect(meta.tags).toEqual(['binary']);
@@ -275,15 +270,15 @@ describe('VaultEngine', () => {
 
     it('writeFile on existing path throws FileAlreadyExistsError', async () => {
       await engine.writeFile('dup.txt', Buffer.from('first'), masterKey);
-      await expect(
-        engine.writeFile('dup.txt', Buffer.from('second'), masterKey),
-      ).rejects.toThrow(FileAlreadyExistsError);
+      await expect(engine.writeFile('dup.txt', Buffer.from('second'), masterKey)).rejects.toThrow(
+        FileAlreadyExistsError,
+      );
     });
 
     it('readFile on non-existent file throws FileNotFoundError', async () => {
-      await expect(
-        engine.readFile('nonexistent.txt', masterKey),
-      ).rejects.toThrow(FileNotFoundError);
+      await expect(engine.readFile('nonexistent.txt', masterKey)).rejects.toThrow(
+        FileNotFoundError,
+      );
     });
   });
 
@@ -291,25 +286,17 @@ describe('VaultEngine', () => {
 
   describe('deleteFile', () => {
     it('removes blob and metadata', async () => {
-      const meta = await engine.writeFile(
-        'delete-me.txt',
-        Buffer.from('bye'),
-        masterKey,
-      );
+      const meta = await engine.writeFile('delete-me.txt', Buffer.from('bye'), masterKey);
       const blobPath = path.join(vaultDir, 'files', `${meta.blobId}.age`);
       expect(fs.existsSync(blobPath)).toBe(true);
 
       await engine.deleteFile('delete-me.txt');
       expect(fs.existsSync(blobPath)).toBe(false);
-      await expect(
-        engine.readFile('delete-me.txt', masterKey),
-      ).rejects.toThrow(FileNotFoundError);
+      await expect(engine.readFile('delete-me.txt', masterKey)).rejects.toThrow(FileNotFoundError);
     });
 
     it('on non-existent file throws FileNotFoundError', async () => {
-      await expect(engine.deleteFile('ghost.txt')).rejects.toThrow(
-        FileNotFoundError,
-      );
+      await expect(engine.deleteFile('ghost.txt')).rejects.toThrow(FileNotFoundError);
     });
   });
 
@@ -337,11 +324,7 @@ describe('VaultEngine', () => {
 
   describe('searchFiles', () => {
     it('matches filenames', async () => {
-      await engine.writeFile(
-        'contracts/lease.pdf',
-        Buffer.from('pdf'),
-        masterKey,
-      );
+      await engine.writeFile('contracts/lease.pdf', Buffer.from('pdf'), masterKey);
       await engine.writeFile('notes/todo.md', Buffer.from('md'), masterKey);
       const results = engine.searchFiles('lease');
       expect(results).toHaveLength(1);
@@ -354,16 +337,8 @@ describe('VaultEngine', () => {
 
   describe('grepFiles', () => {
     it('finds content matches across files', async () => {
-      await engine.writeFile(
-        'file1.txt',
-        Buffer.from('line1\nfind me here\nline3'),
-        masterKey,
-      );
-      await engine.writeFile(
-        'file2.txt',
-        Buffer.from('nothing interesting'),
-        masterKey,
-      );
+      await engine.writeFile('file1.txt', Buffer.from('line1\nfind me here\nline3'), masterKey);
+      await engine.writeFile('file2.txt', Buffer.from('nothing interesting'), masterKey);
       const results = await engine.grepFiles('find me', masterKey);
       expect(results).toHaveLength(1);
       expect(results[0].vaultPath).toBe('file1.txt');
@@ -376,11 +351,7 @@ describe('VaultEngine', () => {
 
   describe('addKey', () => {
     it('creates a new passphrase key', async () => {
-      const record = await engine.addKey(
-        'second-passphrase-1234',
-        'backup key',
-        masterKey,
-      );
+      const record = await engine.addKey('second-passphrase-1234', 'backup key', masterKey);
       expect(record.label).toBe('backup key');
       expect(record.id).toBeDefined();
       expect(engine.listKeys()).toHaveLength(2);
@@ -401,19 +372,13 @@ describe('VaultEngine', () => {
     }, 30_000);
 
     it('with wrong passphrase throws InvalidKeyError', async () => {
-      await expect(engine.unlock('wrong-passphrase-9999')).rejects.toThrow(
-        InvalidKeyError,
-      );
+      await expect(engine.unlock('wrong-passphrase-9999')).rejects.toThrow(InvalidKeyError);
     });
   });
 
   describe('revokeKey', () => {
     it('removes key', async () => {
-      const second = await engine.addKey(
-        'second-passphrase-1234',
-        'second',
-        masterKey,
-      );
+      const second = await engine.addKey('second-passphrase-1234', 'second', masterKey);
       expect(engine.listKeys()).toHaveLength(2);
       engine.revokeKey(second.id);
       expect(engine.listKeys()).toHaveLength(1);
@@ -426,9 +391,9 @@ describe('VaultEngine', () => {
     });
 
     it('on non-existent key throws KeyNotFoundError', () => {
-      expect(() =>
-        engine.revokeKey('00000000-0000-0000-0000-000000000000'),
-      ).toThrow(KeyNotFoundError);
+      expect(() => engine.revokeKey('00000000-0000-0000-0000-000000000000')).toThrow(
+        KeyNotFoundError,
+      );
     });
   });
 

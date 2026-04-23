@@ -37,9 +37,7 @@ export function sanitizeSearchPattern(pattern: string): string {
   }
 
   if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error(
-      `Search pattern exceeds maximum length of ${MAX_PATTERN_LENGTH}`,
-    );
+    throw new Error(`Search pattern exceeds maximum length of ${MAX_PATTERN_LENGTH}`);
   }
 
   return pattern;

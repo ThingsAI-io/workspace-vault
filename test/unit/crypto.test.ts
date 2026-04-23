@@ -72,9 +72,7 @@ describe('crypto/age passphrase', () => {
   it('decryption with wrong passphrase throws InvalidKeyError', async () => {
     const plaintext = Buffer.from('secret');
     const ciphertext = await encryptWithPassphrase(plaintext, 'correct-pass');
-    await expect(
-      decryptWithPassphrase(ciphertext, 'wrong-pass'),
-    ).rejects.toThrow(InvalidKeyError);
+    await expect(decryptWithPassphrase(ciphertext, 'wrong-pass')).rejects.toThrow(InvalidKeyError);
   });
 });
 
@@ -133,9 +131,7 @@ describe('crypto/keys', () => {
     const wrongKp = await generateKeyPair();
 
     const wrapped = await wrapMasterKey(masterKp.privateKey, recipientKp.publicKey);
-    await expect(unwrapMasterKey(wrapped, wrongKp.privateKey)).rejects.toThrow(
-      InvalidKeyError,
-    );
+    await expect(unwrapMasterKey(wrapped, wrongKp.privateKey)).rejects.toThrow(InvalidKeyError);
   });
 
   it('wrapMasterKeyWithPassphrase + unwrapMasterKey round-trip works', async () => {
@@ -155,8 +151,6 @@ describe('crypto/keys', () => {
     const { identity: wrongIdentity } = await passphraseToIdentity('wrong-passphrase', salt);
 
     const wrapped = await wrapMasterKeyWithPassphrase(masterKp.privateKey, identity);
-    await expect(unwrapMasterKey(wrapped, wrongIdentity)).rejects.toThrow(
-      InvalidKeyError,
-    );
+    await expect(unwrapMasterKey(wrapped, wrongIdentity)).rejects.toThrow(InvalidKeyError);
   });
 });

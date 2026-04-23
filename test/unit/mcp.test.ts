@@ -73,12 +73,9 @@ describe('MCP Server', () => {
       masterKey,
       ['doc', 'readme'],
     );
-    await engine.writeFile(
-      'secrets/api-key.txt',
-      Buffer.from('sk-secret-key-12345'),
-      masterKey,
-      ['secret'],
-    );
+    await engine.writeFile('secrets/api-key.txt', Buffer.from('sk-secret-key-12345'), masterKey, [
+      'secret',
+    ]);
   });
 
   afterEach(() => {

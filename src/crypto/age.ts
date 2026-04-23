@@ -4,10 +4,7 @@ import { InvalidKeyError } from '../types.js';
 /**
  * Encrypt a buffer for one or more age recipients (public keys).
  */
-export async function encrypt(
-  plaintext: Buffer,
-  recipients: string[],
-): Promise<Buffer> {
+export async function encrypt(plaintext: Buffer, recipients: string[]): Promise<Buffer> {
   const e = new Encrypter();
   for (const r of recipients) {
     e.addRecipient(r);
@@ -19,19 +16,14 @@ export async function encrypt(
 /**
  * Decrypt a buffer using an age identity (private key).
  */
-export async function decrypt(
-  ciphertext: Buffer,
-  identity: string,
-): Promise<Buffer> {
+export async function decrypt(ciphertext: Buffer, identity: string): Promise<Buffer> {
   try {
     const d = new Decrypter();
     d.addIdentity(identity);
     const plaintext = await d.decrypt(ciphertext);
     return Buffer.from(plaintext);
   } catch (err) {
-    throw new InvalidKeyError(
-      err instanceof Error ? err.message : 'Decryption failed',
-    );
+    throw new InvalidKeyError(err instanceof Error ? err.message : 'Decryption failed');
   }
 }
 
@@ -62,8 +54,6 @@ export async function decryptWithPassphrase(
     const plaintext = await d.decrypt(ciphertext);
     return Buffer.from(plaintext);
   } catch (err) {
-    throw new InvalidKeyError(
-      err instanceof Error ? err.message : 'Decryption failed',
-    );
+    throw new InvalidKeyError(err instanceof Error ? err.message : 'Decryption failed');
   }
 }

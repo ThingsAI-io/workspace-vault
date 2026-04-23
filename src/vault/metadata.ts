@@ -58,9 +58,9 @@ export class MetadataStore {
   }
 
   getFile(vaultPath: string): FileMetadata | null {
-    const row = this.db
-      .prepare('SELECT * FROM files WHERE vault_path = ?')
-      .get(vaultPath) as RawFileRow | undefined;
+    const row = this.db.prepare('SELECT * FROM files WHERE vault_path = ?').get(vaultPath) as
+      | RawFileRow
+      | undefined;
     return row ? toFileMetadata(row) : null;
   }
 
@@ -72,9 +72,7 @@ export class MetadataStore {
         .all(prefix + '%') as RawFileRow[];
       return rows.map(toFileMetadata);
     }
-    const rows = this.db
-      .prepare('SELECT * FROM files ORDER BY vault_path')
-      .all() as RawFileRow[];
+    const rows = this.db.prepare('SELECT * FROM files ORDER BY vault_path').all() as RawFileRow[];
     return rows.map(toFileMetadata);
   }
 
@@ -133,16 +131,12 @@ export class MetadataStore {
   }
 
   getKey(id: string): KeyRecordFull | null {
-    const row = this.db.prepare('SELECT * FROM keys WHERE id = ?').get(id) as
-      | RawKeyRow
-      | undefined;
+    const row = this.db.prepare('SELECT * FROM keys WHERE id = ?').get(id) as RawKeyRow | undefined;
     return row ? toKeyRecord(row) : null;
   }
 
   getAllKeys(): KeyRecordFull[] {
-    const rows = this.db
-      .prepare('SELECT * FROM keys ORDER BY created_at')
-      .all() as RawKeyRow[];
+    const rows = this.db.prepare('SELECT * FROM keys ORDER BY created_at').all() as RawKeyRow[];
     return rows.map(toKeyRecord);
   }
 

@@ -4,9 +4,7 @@ import { createInterface } from 'node:readline';
  * Prompt for a passphrase without echoing input.
  * Writes prompt to stderr so stdout remains clean for piping.
  */
-export async function promptPassphrase(
-  prompt = 'Passphrase: ',
-): Promise<string> {
+export async function promptPassphrase(prompt = 'Passphrase: '): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!process.stdin.isTTY) {
       reject(new Error('Cannot prompt for passphrase: stdin is not a TTY'));

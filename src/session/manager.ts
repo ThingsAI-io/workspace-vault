@@ -1,5 +1,10 @@
 import fs from 'node:fs';
-import { type SessionData, VaultLockedError, SessionExpiredError, SessionFileError } from '../types.js';
+import {
+  type SessionData,
+  VaultLockedError,
+  SessionExpiredError,
+  SessionFileError,
+} from '../types.js';
 import { setRestrictivePermissions } from '../security/index.js';
 
 const DEFAULT_TTL_MINUTES = 30;

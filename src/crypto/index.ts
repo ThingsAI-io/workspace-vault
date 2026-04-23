@@ -1,9 +1,4 @@
-export {
-  encrypt,
-  decrypt,
-  encryptWithPassphrase,
-  decryptWithPassphrase,
-} from './age.js';
+export { encrypt, decrypt, encryptWithPassphrase, decryptWithPassphrase } from './age.js';
 export {
   generateKeyPair,
   passphraseToIdentity,

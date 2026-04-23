@@ -13,10 +13,7 @@ const WINDOWS_RESERVED = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
  * @returns The resolved absolute path guaranteed to be within vaultRoot
  * @throws PathTraversalError if path escapes vault root
  */
-export function validateVaultPath(
-  userPath: string,
-  vaultRoot: string,
-): string {
+export function validateVaultPath(userPath: string, vaultRoot: string): string {
   // 1. Reject null bytes
   if (userPath.includes('\0')) {
     throw new PathTraversalError('Path contains null bytes');
@@ -37,9 +34,7 @@ export function validateVaultPath(
       : resolved === resolvedRoot || resolved.startsWith(rootWithSep);
 
   if (!isWithin) {
-    throw new PathTraversalError(
-      `Path "${userPath}" resolves outside vault root`,
-    );
+    throw new PathTraversalError(`Path "${userPath}" resolves outside vault root`);
   }
 
   // 5. Windows-specific checks
@@ -59,9 +54,7 @@ export function validateVaultPath(
 
       // Strip extension for reserved-name check (e.g. CON.txt is also reserved)
       if (WINDOWS_RESERVED.test(component)) {
-        throw new PathTraversalError(
-          `Path contains Windows reserved device name: "${component}"`,
-        );
+        throw new PathTraversalError(`Path contains Windows reserved device name: "${component}"`);
       }
     }
   }
@@ -70,9 +63,7 @@ export function validateVaultPath(
   try {
     const stat = fs.lstatSync(resolved);
     if (stat.isSymbolicLink()) {
-      throw new PathTraversalError(
-        `Path "${userPath}" is a symbolic link, which is not allowed`,
-      );
+      throw new PathTraversalError(`Path "${userPath}" is a symbolic link, which is not allowed`);
     }
   } catch (err) {
     // If the file doesn't exist, that's fine (new file path)

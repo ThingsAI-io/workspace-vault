@@ -11,7 +11,10 @@ const SESSION_FILE_NAME = 'session';
 
 function getConfigDir(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env['APPDATA'] || path.join(os.homedir(), 'AppData', 'Roaming'), CONFIG_DIR_NAME);
+    return path.join(
+      process.env['APPDATA'] || path.join(os.homedir(), 'AppData', 'Roaming'),
+      CONFIG_DIR_NAME,
+    );
   }
   if (process.platform === 'darwin') {
     return path.join(os.homedir(), 'Library', 'Application Support', CONFIG_DIR_NAME);
@@ -88,4 +91,3 @@ export class ConfigManager {
     return config;
   }
 }
-

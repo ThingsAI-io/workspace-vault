@@ -112,9 +112,7 @@ program
   });
 
 // Key management subcommand
-const key = program
-  .command('key')
-  .description('Manage vault keys');
+const key = program.command('key').description('Manage vault keys');
 
 key
   .command('add')
@@ -164,9 +162,7 @@ async function main() {
       process.exit(1);
     }
     if (err instanceof VaultNotInitializedError) {
-      process.stderr.write(
-        'Vault not initialized. Run `vault init` first.\n',
-      );
+      process.stderr.write('Vault not initialized. Run `vault init` first.\n');
       process.exit(1);
     }
     if (err instanceof InvalidKeyError) {
@@ -177,9 +173,7 @@ async function main() {
       process.stderr.write(`Error: ${err.message}\n`);
       process.exit(1);
     }
-    process.stderr.write(
-      `Unexpected error: ${err instanceof Error ? err.message : String(err)}\n`,
-    );
+    process.stderr.write(`Unexpected error: ${err instanceof Error ? err.message : String(err)}\n`);
     process.exit(2);
   }
 }

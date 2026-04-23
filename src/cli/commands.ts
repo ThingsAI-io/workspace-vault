@@ -5,11 +5,7 @@ import { VaultEngine } from '../vault/index.js';
 import { SessionManager } from '../session/index.js';
 import { ConfigManager } from '../config/index.js';
 import { sanitizeOutput } from '../security/index.js';
-import {
-  type OperationType,
-  VaultLockedError,
-  SessionExpiredError,
-} from '../types.js';
+import { type OperationType, VaultLockedError, SessionExpiredError } from '../types.js';
 import { promptPassphrase, promptPassphraseConfirm } from './prompt.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -28,9 +24,7 @@ function getSession(config: ConfigManager): SessionManager {
 
 function requireInit(config: ConfigManager): void {
   if (!config.isInitialized()) {
-    process.stderr.write(
-      'Vault not initialized. Run `vault init` first.\n',
-    );
+    process.stderr.write('Vault not initialized. Run `vault init` first.\n');
     process.exit(1);
   }
 }
@@ -40,15 +34,11 @@ function requireUnlock(session: SessionManager): string {
     return session.readSession();
   } catch (err) {
     if (err instanceof VaultLockedError) {
-      process.stderr.write(
-        'Vault is locked. Run `vault unlock` first.\n',
-      );
+      process.stderr.write('Vault is locked. Run `vault unlock` first.\n');
       process.exit(1);
     }
     if (err instanceof SessionExpiredError) {
-      process.stderr.write(
-        'Session expired. Run `vault unlock` again.\n',
-      );
+      process.stderr.write('Session expired. Run `vault unlock` again.\n');
       process.exit(1);
     }
     throw err;
@@ -56,7 +46,10 @@ function requireUnlock(session: SessionManager): string {
 }
 
 function formatDate(d: Date): string {
-  return d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, 'Z');
+  return d
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, 'Z');
 }
 
 function formatSize(bytes: number): string {
@@ -76,9 +69,7 @@ async function readStdin(): Promise<Buffer> {
 // ── Commands ─────────────────────────────────────────────────────────────────
 
 export async function initCommand(vaultPath?: string): Promise<void> {
-  const resolvedPath = path.resolve(
-    vaultPath ?? path.join(os.homedir(), '.vault'),
-  );
+  const resolvedPath = path.resolve(vaultPath ?? path.join(os.homedir(), '.vault'));
 
   const passphrase = await promptPassphraseConfirm();
 
@@ -181,15 +172,8 @@ export async function writeCommand(
       content = await readStdin();
     }
 
-    const meta = await engine.writeFile(
-      vaultPath,
-      content,
-      masterKey,
-      options.tag,
-    );
-    process.stderr.write(
-      `Written ${vaultPath} (${formatSize(meta.size)})\n`,
-    );
+    const meta = await engine.writeFile(vaultPath, content, masterKey, options.tag);
+    process.stderr.write(`Written ${vaultPath} (${formatSize(meta.size)})\n`);
   } finally {
     engine.close();
   }
@@ -285,9 +269,7 @@ export async function grepCommand(pattern: string): Promise<void> {
       return;
     }
     for (const r of results) {
-      process.stdout.write(
-        `${r.vaultPath}:${r.lineNumber}: ${sanitizeOutput(r.line)}\n`,
-      );
+      process.stdout.write(`${r.vaultPath}:${r.lineNumber}: ${sanitizeOutput(r.line)}\n`);
     }
   } finally {
     engine.close();
@@ -340,13 +322,9 @@ export function keyListCommand(): void {
       return;
     }
 
-    process.stdout.write(
-      `${'ID'.padEnd(38)} ${'LABEL'.padEnd(24)} CREATED\n`,
-    );
+    process.stdout.write(`${'ID'.padEnd(38)} ${'LABEL'.padEnd(24)} CREATED\n`);
     for (const k of keys) {
-      process.stdout.write(
-        `${k.id.padEnd(38)} ${k.label.padEnd(24)} ${formatDate(k.createdAt)}\n`,
-      );
+      process.stdout.write(`${k.id.padEnd(38)} ${k.label.padEnd(24)} ${formatDate(k.createdAt)}\n`);
     }
   } finally {
     engine.close();
@@ -368,10 +346,7 @@ export function keyRevokeCommand(keyId: string): void {
   }
 }
 
-export function auditCommand(options: {
-  tail?: string;
-  operation?: string;
-}): void {
+export function auditCommand(options: { tail?: string; operation?: string }): void {
   const config = getConfig();
   requireInit(config);
   const engine = getEngine(config);
@@ -379,9 +354,7 @@ export function auditCommand(options: {
   try {
     const limit = options.tail ? parseInt(options.tail, 10) : undefined;
     const operation = options.operation as OperationType | undefined;
-    const events = engine
-      .getAuditLogger()
-      .getEvents({ limit, operation });
+    const events = engine.getAuditLogger().getEvents({ limit, operation });
 
     if (events.length === 0) {
       process.stderr.write('No audit events.\n');
@@ -408,9 +381,7 @@ export async function mcpCommand(): Promise<void> {
   const session = getSession(config);
 
   const { createVaultMcpServer } = await import('../mcp/index.js');
-  const { StdioServerTransport } = await import(
-    '@modelcontextprotocol/sdk/server/stdio.js'
-  );
+  const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
   const server = createVaultMcpServer(engine, session);
   const transport = new StdioServerTransport();

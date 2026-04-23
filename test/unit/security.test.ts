@@ -11,14 +11,8 @@ import {
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import {
-  validateVaultPath,
-  hasAlternateDataStream,
-} from '../../src/security/paths.js';
-import {
-  sanitizeOutput,
-  sanitizeSearchPattern,
-} from '../../src/security/sanitize.js';
+import { validateVaultPath, hasAlternateDataStream } from '../../src/security/paths.js';
+import { sanitizeOutput, sanitizeSearchPattern } from '../../src/security/sanitize.js';
 import { setRestrictivePermissions } from '../../src/security/permissions.js';
 import { PathTraversalError } from '../../src/types.js';
 
@@ -46,29 +40,22 @@ describe('security/paths', () => {
   });
 
   it('rejects path with ../ traversal', () => {
-    expect(() => validateVaultPath('../outside.txt', vaultRoot)).toThrow(
-      PathTraversalError,
-    );
+    expect(() => validateVaultPath('../outside.txt', vaultRoot)).toThrow(PathTraversalError);
   });
 
   it('rejects deeply nested ../ traversal', () => {
-    expect(() =>
-      validateVaultPath('a/b/../../../../etc/passwd', vaultRoot),
-    ).toThrow(PathTraversalError);
+    expect(() => validateVaultPath('a/b/../../../../etc/passwd', vaultRoot)).toThrow(
+      PathTraversalError,
+    );
   });
 
   it('rejects absolute path outside vault', () => {
-    const outsidePath =
-      process.platform === 'win32' ? 'C:\\Windows\\System32' : '/etc/passwd';
-    expect(() => validateVaultPath(outsidePath, vaultRoot)).toThrow(
-      PathTraversalError,
-    );
+    const outsidePath = process.platform === 'win32' ? 'C:\\Windows\\System32' : '/etc/passwd';
+    expect(() => validateVaultPath(outsidePath, vaultRoot)).toThrow(PathTraversalError);
   });
 
   it('rejects null bytes in path', () => {
-    expect(() => validateVaultPath('file\0.txt', vaultRoot)).toThrow(
-      PathTraversalError,
-    );
+    expect(() => validateVaultPath('file\0.txt', vaultRoot)).toThrow(PathTraversalError);
   });
 
   it('rejects symlinks pointing outside vault', () => {
@@ -79,9 +66,7 @@ describe('security/paths', () => {
       // Symlink creation may require elevated privileges on Windows
       return;
     }
-    expect(() => validateVaultPath('evil-link', vaultRoot)).toThrow(
-      PathTraversalError,
-    );
+    expect(() => validateVaultPath('evil-link', vaultRoot)).toThrow(PathTraversalError);
   });
 
   it('handles path with trailing slashes', () => {
@@ -116,31 +101,21 @@ describe('security/paths', () => {
   // Windows-specific tests
   const isWindows = process.platform === 'win32';
 
-  it.skipIf(!isWindows)(
-    'rejects Windows ADS (alternate data streams)',
-    () => {
-      expect(() => validateVaultPath('file.txt:Zone.Identifier', vaultRoot)).toThrow(
-        PathTraversalError,
-      );
-    },
-  );
+  it.skipIf(!isWindows)('rejects Windows ADS (alternate data streams)', () => {
+    expect(() => validateVaultPath('file.txt:Zone.Identifier', vaultRoot)).toThrow(
+      PathTraversalError,
+    );
+  });
 
   it.skipIf(!isWindows)('rejects Windows reserved device names', () => {
     for (const name of ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'LPT1']) {
-      expect(() => validateVaultPath(name, vaultRoot)).toThrow(
-        PathTraversalError,
-      );
+      expect(() => validateVaultPath(name, vaultRoot)).toThrow(PathTraversalError);
     }
   });
 
-  it.skipIf(!isWindows)(
-    'rejects Windows reserved names with extension',
-    () => {
-      expect(() => validateVaultPath('CON.txt', vaultRoot)).toThrow(
-        PathTraversalError,
-      );
-    },
-  );
+  it.skipIf(!isWindows)('rejects Windows reserved names with extension', () => {
+    expect(() => validateVaultPath('CON.txt', vaultRoot)).toThrow(PathTraversalError);
+  });
 });
 
 describe('hasAlternateDataStream', () => {
@@ -212,9 +187,7 @@ describe('sanitizeSearchPattern', () => {
   });
 
   it('rejects extremely long patterns', () => {
-    expect(() => sanitizeSearchPattern('a'.repeat(2000))).toThrow(
-      /maximum length/,
-    );
+    expect(() => sanitizeSearchPattern('a'.repeat(2000))).toThrow(/maximum length/);
   });
 
   it('accepts pattern at max length', () => {
@@ -263,8 +236,6 @@ describe('security/permissions', () => {
   it('does not throw for directory on any platform', () => {
     const dirPath = join(tempDir, 'test-dir');
     mkdirSync(dirPath);
-    expect(() =>
-      setRestrictivePermissions(dirPath, 'directory'),
-    ).not.toThrow();
+    expect(() => setRestrictivePermissions(dirPath, 'directory')).not.toThrow();
   });
 });

@@ -53,7 +53,11 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
 
   afterEach(() => {
     for (const e of engines) {
-      try { e.close(); } catch { /* already closed */ }
+      try {
+        e.close();
+      } catch {
+        /* already closed */
+      }
     }
     engines.length = 0;
     for (const d of dirs) cleanup(d);
@@ -124,9 +128,24 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
     const masterKey = await engine.unlock(TEST_PASSPHRASE);
 
     // Write multiple files
-    await engine.writeFile('src/main.ts', Buffer.from('export function main() { return 42; }'), masterKey, ['typescript', 'entry']);
-    await engine.writeFile('src/utils.ts', Buffer.from('export function add(a: number, b: number) { return a + b; }'), masterKey, ['typescript', 'utils']);
-    await engine.writeFile('docs/readme.md', Buffer.from('# Project\nThis is the readme file.'), masterKey, ['documentation']);
+    await engine.writeFile(
+      'src/main.ts',
+      Buffer.from('export function main() { return 42; }'),
+      masterKey,
+      ['typescript', 'entry'],
+    );
+    await engine.writeFile(
+      'src/utils.ts',
+      Buffer.from('export function add(a: number, b: number) { return a + b; }'),
+      masterKey,
+      ['typescript', 'utils'],
+    );
+    await engine.writeFile(
+      'docs/readme.md',
+      Buffer.from('# Project\nThis is the readme file.'),
+      masterKey,
+      ['documentation'],
+    );
     await engine.writeFile('config.json', Buffer.from('{"port": 3000}'), masterKey, ['config']);
 
     // List all
@@ -136,8 +155,8 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
     // List by prefix
     const srcFiles = engine.listFiles('src');
     expect(srcFiles).toHaveLength(2);
-    expect(srcFiles.map(f => f.vaultPath)).toContain('src/main.ts');
-    expect(srcFiles.map(f => f.vaultPath)).toContain('src/utils.ts');
+    expect(srcFiles.map((f) => f.vaultPath)).toContain('src/main.ts');
+    expect(srcFiles.map((f) => f.vaultPath)).toContain('src/utils.ts');
 
     // Search by name
     const nameResults = engine.searchFiles('readme');
@@ -151,7 +170,7 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
     // Grep content
     const grepResults = await engine.grepFiles('function', masterKey);
     expect(grepResults.length).toBeGreaterThanOrEqual(2);
-    const grepPaths = grepResults.map(r => r.vaultPath);
+    const grepPaths = grepResults.map((r) => r.vaultPath);
     expect(grepPaths).toContain('src/main.ts');
     expect(grepPaths).toContain('src/utils.ts');
 
@@ -252,7 +271,10 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
     expect(readLocked.isError).toBe(true);
     expect(readLocked.content[0].text).toContain('vault unlock');
 
-    const createLocked = await callTool(server, 'vault_create_file', { path: 'x.txt', content: 'hi' });
+    const createLocked = await callTool(server, 'vault_create_file', {
+      path: 'x.txt',
+      content: 'hi',
+    });
     expect(createLocked.isError).toBe(true);
 
     const grepLocked = await callTool(server, 'vault_grep_search', { pattern: 'test' });
@@ -417,9 +439,9 @@ describe('Integration: Full vault lifecycle', { timeout: 60_000 }, () => {
     const masterKey = await engine.unlock(TEST_PASSPHRASE);
 
     await engine.writeFile('dup.txt', Buffer.from('first'), masterKey);
-    await expect(
-      engine.writeFile('dup.txt', Buffer.from('second'), masterKey),
-    ).rejects.toThrow(FileAlreadyExistsError);
+    await expect(engine.writeFile('dup.txt', Buffer.from('second'), masterKey)).rejects.toThrow(
+      FileAlreadyExistsError,
+    );
 
     // Original content preserved
     const content = await engine.readFile('dup.txt', masterKey);

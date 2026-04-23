@@ -49,11 +49,7 @@ export class AuditLogger {
   /**
    * Query audit events with optional filtering.
    */
-  getEvents(params?: {
-    limit?: number;
-    operation?: OperationType;
-    since?: Date;
-  }): AuditEntry[] {
+  getEvents(params?: { limit?: number; operation?: OperationType; since?: Date }): AuditEntry[] {
     const conditions: string[] = [];
     const values: unknown[] = [];
 
@@ -101,9 +97,9 @@ export class AuditLogger {
    * Get total count of audit events.
    */
   getEventCount(): number {
-    const row = this.db
-      .prepare('SELECT COUNT(*) AS count FROM audit_log')
-      .get() as { count: number };
+    const row = this.db.prepare('SELECT COUNT(*) AS count FROM audit_log').get() as {
+      count: number;
+    };
     return row.count;
   }
 

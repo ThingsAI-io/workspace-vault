@@ -73,7 +73,11 @@ describe('SessionManager', () => {
 
     it('cleans up expired session file', () => {
       manager.writeSession('deadbeef', 0);
-      try { manager.readSession(); } catch { /* expected */ }
+      try {
+        manager.readSession();
+      } catch {
+        /* expected */
+      }
       expect(existsSync(sessionPath)).toBe(false);
     });
   });

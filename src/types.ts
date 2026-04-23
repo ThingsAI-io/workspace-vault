@@ -224,7 +224,7 @@ export const AuditQuerySchema = z.object({
 // ── Session file types ───────────────────────────────────────────────────────
 
 export interface SessionData {
-  masterKey: string;    // hex-encoded master key
-  expiresAt: string;    // ISO 8601 timestamp
-  createdAt: string;    // ISO 8601 timestamp
+  masterKey: string; // hex-encoded master key
+  expiresAt: string; // ISO 8601 timestamp
+  createdAt: string; // ISO 8601 timestamp
 }
