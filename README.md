@@ -1,5 +1,7 @@
 # Workspace Vault
 
+> **⚠️ Experimental** — This project is in early development and provided as-is. APIs, file formats, and encryption schemes may change between versions. Do not rely on this for production use or as your only copy of important files. Always keep backups of your original data.
+
 An encrypted file vault with CLI and MCP server that gives AI agents controlled access to your private files.
 
 Files are encrypted at rest using [age](https://age-encryption.org/). You control when the vault is unlocked. Your agent works with files through standard operations — read, write, search, list — and when the session ends, everything locks again.
@@ -120,4 +122,6 @@ See [spec/security.md](spec/security.md) for the full security model.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+
+This software is experimental and provided "as is", without warranty of any kind. Use at your own risk.

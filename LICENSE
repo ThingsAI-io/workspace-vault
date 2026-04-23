@@ -2,6 +2,11 @@ MIT License
 
 Copyright (c) 2026 ThingsAI.io
 
+EXPERIMENTAL SOFTWARE — This project is in early development. It is provided
+as-is with no guarantees of stability, backward compatibility, or fitness for
+any particular purpose. Use at your own risk. Do not use as your sole storage
+for important data.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
