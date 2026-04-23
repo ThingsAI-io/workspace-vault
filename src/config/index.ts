@@ -10,6 +10,9 @@ const CONFIG_FILE_NAME = 'config.json';
 const SESSION_FILE_NAME = 'session';
 
 function getConfigDir(): string {
+  const envDir = process.env['WORKSPACE_VAULT_CONFIG_DIR'];
+  if (envDir) return envDir;
+
   if (process.platform === 'win32') {
     return path.join(
       process.env['APPDATA'] || path.join(os.homedir(), 'AppData', 'Roaming'),

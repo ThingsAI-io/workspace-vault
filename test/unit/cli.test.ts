@@ -1,15 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const CLI_PATH = path.resolve('dist/cli/index.js');
+
+// Use an isolated config dir so tests don't depend on host machine state
+const TEST_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'vault-cli-test-'));
 
 function run(args: string[]): { stdout: string; stderr: string; exitCode: number } {
   try {
     const stdout = execFileSync('node', [CLI_PATH, ...args], {
       encoding: 'utf-8',
       timeout: 10_000,
-      env: { ...process.env, NODE_NO_WARNINGS: '1' },
+      env: { ...process.env, NODE_NO_WARNINGS: '1', WORKSPACE_VAULT_CONFIG_DIR: TEST_CONFIG_DIR },
     });
     return { stdout, stderr: '', exitCode: 0 };
   } catch (err) {
