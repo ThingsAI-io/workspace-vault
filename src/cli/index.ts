@@ -57,8 +57,8 @@ program
 program
   .command('status')
   .description('Show vault status')
-  .action(() => {
-    statusCommand();
+  .action(async () => {
+    await statusCommand();
   });
 
 program
@@ -91,16 +91,16 @@ program
   .command('list')
   .description('List files in the vault')
   .argument('[vault-path]', 'directory path to list')
-  .action((vaultPath?: string) => {
-    listCommand(vaultPath);
+  .action(async (vaultPath?: string) => {
+    await listCommand(vaultPath);
   });
 
 program
   .command('search')
   .description('Search files by name or tag')
   .argument('<query>', 'search query')
-  .action((query: string) => {
-    searchCommand(query);
+  .action(async (query: string) => {
+    await searchCommand(query);
   });
 
 program
@@ -124,16 +124,16 @@ key
 key
   .command('list')
   .description('List all keys')
-  .action(() => {
-    keyListCommand();
+  .action(async () => {
+    await keyListCommand();
   });
 
 key
   .command('revoke')
   .description('Revoke a key')
   .argument('<key-id>', 'ID of the key to revoke')
-  .action((keyId: string) => {
-    keyRevokeCommand(keyId);
+  .action(async (keyId: string) => {
+    await keyRevokeCommand(keyId);
   });
 
 program
@@ -141,8 +141,8 @@ program
   .description('View audit log')
   .option('--tail <n>', 'number of recent events to show')
   .option('--operation <type>', 'filter by operation type')
-  .action((options: { tail?: string; operation?: string }) => {
-    auditCommand(options);
+  .action(async (options: { tail?: string; operation?: string }) => {
+    await auditCommand(options);
   });
 
 program

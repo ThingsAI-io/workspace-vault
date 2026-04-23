@@ -26,9 +26,9 @@ describe('MetadataStore', () => {
   let tmpDir: string;
   let store: MetadataStore;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     tmpDir = makeTempDir();
-    store = new MetadataStore(path.join(tmpDir, 'vault.db'));
+    store = await MetadataStore.create(path.join(tmpDir, 'vault.db'));
   });
 
   afterEach(() => {

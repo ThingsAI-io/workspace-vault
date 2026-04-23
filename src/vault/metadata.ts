@@ -1,5 +1,8 @@
-import Database from 'better-sqlite3';
+import fs from 'node:fs';
+import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
 import type { FileMetadata, KeyRecord } from '../types.js';
+
+type SqlJsBindParams = Parameters<SqlJsDatabase['run']>[1];
 
 export interface KeyRecordFull extends KeyRecord {
   publicKey: string;
@@ -8,13 +11,20 @@ export interface KeyRecordFull extends KeyRecord {
 }
 
 export class MetadataStore {
-  private db: Database.Database;
+  private db: SqlJsDatabase;
+  private dbPath: string;
 
-  constructor(dbPath: string) {
-    this.db = new Database(dbPath);
-    this.db.pragma('journal_mode = WAL');
+  private constructor(db: SqlJsDatabase, dbPath: string) {
+    this.db = db;
+    this.dbPath = dbPath;
+  }
 
-    this.db.exec(`
+  static async create(dbPath: string): Promise<MetadataStore> {
+    const SQL = await initSqlJs();
+    const fileBuffer = fs.existsSync(dbPath) ? fs.readFileSync(dbPath) : undefined;
+    const db = new SQL.Database(fileBuffer);
+
+    db.run(`
       CREATE TABLE IF NOT EXISTS files (
         id TEXT PRIMARY KEY,
         vault_path TEXT UNIQUE NOT NULL,
@@ -26,7 +36,7 @@ export class MetadataStore {
       )
     `);
 
-    this.db.exec(`
+    db.run(`
       CREATE TABLE IF NOT EXISTS keys (
         id TEXT PRIMARY KEY,
         label TEXT NOT NULL,
@@ -36,17 +46,24 @@ export class MetadataStore {
         created_at TEXT NOT NULL
       )
     `);
+
+    const store = new MetadataStore(db, dbPath);
+    store.persist();
+    return store;
+  }
+
+  private persist(): void {
+    const data = this.db.export();
+    fs.writeFileSync(this.dbPath, Buffer.from(data));
   }
 
   // ── File metadata CRUD ──────────────────────────────────────────────
 
   insertFile(meta: FileMetadata): void {
-    this.db
-      .prepare(
-        `INSERT INTO files (id, vault_path, blob_id, size, created_at, modified_at, tags)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+    this.db.run(
+      `INSERT INTO files (id, vault_path, blob_id, size, created_at, modified_at, tags)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
         meta.id,
         meta.vaultPath,
         meta.blobId,
@@ -54,26 +71,42 @@ export class MetadataStore {
         meta.createdAt.toISOString(),
         meta.modifiedAt.toISOString(),
         JSON.stringify(meta.tags),
-      );
+      ],
+    );
+    this.persist();
   }
 
   getFile(vaultPath: string): FileMetadata | null {
-    const row = this.db.prepare('SELECT * FROM files WHERE vault_path = ?').get(vaultPath) as
-      | RawFileRow
-      | undefined;
-    return row ? toFileMetadata(row) : null;
+    const stmt = this.db.prepare('SELECT * FROM files WHERE vault_path = ?');
+    stmt.bind([vaultPath]);
+    let result: FileMetadata | null = null;
+    if (stmt.step()) {
+      result = toFileMetadata(stmt.getAsObject() as unknown as RawFileRow);
+    }
+    stmt.free();
+    return result;
   }
 
   getAllFiles(dirPath?: string): FileMetadata[] {
+    const results: FileMetadata[] = [];
     if (dirPath) {
       const prefix = dirPath.endsWith('/') ? dirPath : dirPath + '/';
-      const rows = this.db
-        .prepare('SELECT * FROM files WHERE vault_path LIKE ? ORDER BY vault_path')
-        .all(prefix + '%') as RawFileRow[];
-      return rows.map(toFileMetadata);
+      const stmt = this.db.prepare(
+        'SELECT * FROM files WHERE vault_path LIKE ? ORDER BY vault_path',
+      );
+      stmt.bind([prefix + '%']);
+      while (stmt.step()) {
+        results.push(toFileMetadata(stmt.getAsObject() as unknown as RawFileRow));
+      }
+      stmt.free();
+      return results;
     }
-    const rows = this.db.prepare('SELECT * FROM files ORDER BY vault_path').all() as RawFileRow[];
-    return rows.map(toFileMetadata);
+    const stmt = this.db.prepare('SELECT * FROM files ORDER BY vault_path');
+    while (stmt.step()) {
+      results.push(toFileMetadata(stmt.getAsObject() as unknown as RawFileRow));
+    }
+    stmt.free();
+    return results;
   }
 
   updateFile(
@@ -98,56 +131,72 @@ export class MetadataStore {
 
     if (sets.length === 0) return;
     values.push(id);
-    this.db.prepare(`UPDATE files SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    this.db.run(`UPDATE files SET ${sets.join(', ')} WHERE id = ?`, values as SqlJsBindParams);
+    this.persist();
   }
 
   deleteFile(vaultPath: string): void {
-    this.db.prepare('DELETE FROM files WHERE vault_path = ?').run(vaultPath);
+    this.db.run('DELETE FROM files WHERE vault_path = ?', [vaultPath]);
+    this.persist();
   }
 
   getFileCount(): number {
-    const row = this.db.prepare('SELECT COUNT(*) AS count FROM files').get() as {
-      count: number;
-    };
+    const stmt = this.db.prepare('SELECT COUNT(*) AS count FROM files');
+    stmt.step();
+    const row = stmt.getAsObject() as { count: number };
+    stmt.free();
     return row.count;
   }
 
   // ── Key record CRUD ─────────────────────────────────────────────────
 
   insertKey(record: KeyRecordFull): void {
-    this.db
-      .prepare(
-        `INSERT INTO keys (id, label, public_key, wrapped_master_key, salt, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+    this.db.run(
+      `INSERT INTO keys (id, label, public_key, wrapped_master_key, salt, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
         record.id,
         record.label,
         record.publicKey,
         record.wrappedMasterKey,
         record.salt,
         record.createdAt.toISOString(),
-      );
+      ],
+    );
+    this.persist();
   }
 
   getKey(id: string): KeyRecordFull | null {
-    const row = this.db.prepare('SELECT * FROM keys WHERE id = ?').get(id) as RawKeyRow | undefined;
-    return row ? toKeyRecord(row) : null;
+    const stmt = this.db.prepare('SELECT * FROM keys WHERE id = ?');
+    stmt.bind([id]);
+    let result: KeyRecordFull | null = null;
+    if (stmt.step()) {
+      result = toKeyRecord(stmt.getAsObject() as unknown as RawKeyRow);
+    }
+    stmt.free();
+    return result;
   }
 
   getAllKeys(): KeyRecordFull[] {
-    const rows = this.db.prepare('SELECT * FROM keys ORDER BY created_at').all() as RawKeyRow[];
-    return rows.map(toKeyRecord);
+    const results: KeyRecordFull[] = [];
+    const stmt = this.db.prepare('SELECT * FROM keys ORDER BY created_at');
+    while (stmt.step()) {
+      results.push(toKeyRecord(stmt.getAsObject() as unknown as RawKeyRow));
+    }
+    stmt.free();
+    return results;
   }
 
   deleteKey(id: string): void {
-    this.db.prepare('DELETE FROM keys WHERE id = ?').run(id);
+    this.db.run('DELETE FROM keys WHERE id = ?', [id]);
+    this.persist();
   }
 
   getKeyCount(): number {
-    const row = this.db.prepare('SELECT COUNT(*) AS count FROM keys').get() as {
-      count: number;
-    };
+    const stmt = this.db.prepare('SELECT COUNT(*) AS count FROM keys');
+    stmt.step();
+    const row = stmt.getAsObject() as { count: number };
+    stmt.free();
     return row.count;
   }
 
@@ -155,14 +204,18 @@ export class MetadataStore {
 
   searchFiles(query: string): FileMetadata[] {
     const pattern = `%${query}%`;
-    const rows = this.db
-      .prepare(
-        `SELECT * FROM files
-         WHERE vault_path LIKE ? OR tags LIKE ?
-         ORDER BY vault_path`,
-      )
-      .all(pattern, pattern) as RawFileRow[];
-    return rows.map(toFileMetadata);
+    const results: FileMetadata[] = [];
+    const stmt = this.db.prepare(
+      `SELECT * FROM files
+       WHERE vault_path LIKE ? OR tags LIKE ?
+       ORDER BY vault_path`,
+    );
+    stmt.bind([pattern, pattern]);
+    while (stmt.step()) {
+      results.push(toFileMetadata(stmt.getAsObject() as unknown as RawFileRow));
+    }
+    stmt.free();
+    return results;
   }
 
   close(): void {
@@ -186,7 +239,7 @@ interface RawKeyRow {
   id: string;
   label: string;
   public_key: string;
-  wrapped_master_key: Buffer;
+  wrapped_master_key: Uint8Array;
   salt: string;
   created_at: string;
 }

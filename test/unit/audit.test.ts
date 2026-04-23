@@ -9,9 +9,9 @@ describe('AuditLogger', () => {
   let logger: AuditLogger;
   let tempDir: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     tempDir = mkdtempSync(join(tmpdir(), 'vault-audit-'));
-    logger = new AuditLogger(join(tempDir, 'audit.db'));
+    logger = await AuditLogger.create(join(tempDir, 'audit.db'));
   });
 
   afterEach(() => {
@@ -129,9 +129,17 @@ describe('AuditLogger', () => {
 
   it('NEVER stores content — only operation metadata', async () => {
     // Open a raw database connection to inspect the schema
-    const Database = (await import('better-sqlite3')).default;
-    const db = new Database(join(tempDir, 'audit.db'), { readonly: true });
-    const columns = db.prepare("PRAGMA table_info('audit_log')").all() as Array<{ name: string }>;
+    const initSqlJs = (await import('sql.js')).default;
+    const SQL = await initSqlJs();
+    const { readFileSync } = await import('node:fs');
+    const fileBuffer = readFileSync(join(tempDir, 'audit.db'));
+    const db = new SQL.Database(fileBuffer);
+    const stmt = db.prepare("PRAGMA table_info('audit_log')");
+    const columns: Array<{ name: string }> = [];
+    while (stmt.step()) {
+      columns.push(stmt.getAsObject() as { name: string });
+    }
+    stmt.free();
     const columnNames = columns.map((c) => c.name);
 
     // Only these columns should exist
@@ -149,29 +157,29 @@ describe('AuditLogger', () => {
     db.close();
   });
 
-  it('handles concurrent access gracefully (WAL mode)', () => {
+  it('handles sequential access gracefully', async () => {
     const dbPath = join(tempDir, 'audit.db');
-    const logger2 = new AuditLogger(dbPath);
 
+    // Write from first logger and close
+    logger.logEvent({ operation: OperationType.READ, targetPath: 'from-logger1.txt' });
+    logger.close();
+
+    // Open second logger — should see the first event on disk
+    const logger2 = await AuditLogger.create(dbPath);
     try {
-      // Write from both loggers
-      logger.logEvent({ operation: OperationType.READ, targetPath: 'from-logger1.txt' });
       logger2.logEvent({ operation: OperationType.WRITE, targetPath: 'from-logger2.txt' });
 
-      // Read from both and verify no data corruption
-      const events1 = logger.getEvents();
-      const events2 = logger2.getEvents();
+      const events = logger2.getEvents();
+      expect(events).toHaveLength(2);
 
-      expect(events1).toHaveLength(2);
-      expect(events2).toHaveLength(2);
-
-      const paths1 = events1.map((e) => e.targetPath).sort();
-      const paths2 = events2.map((e) => e.targetPath).sort();
-      expect(paths1).toEqual(['from-logger1.txt', 'from-logger2.txt']);
-      expect(paths2).toEqual(['from-logger1.txt', 'from-logger2.txt']);
+      const paths = events.map((e) => e.targetPath).sort();
+      expect(paths).toEqual(['from-logger1.txt', 'from-logger2.txt']);
     } finally {
       logger2.close();
     }
+
+    // Re-create logger for afterEach cleanup
+    logger = await AuditLogger.create(dbPath);
   });
 
   it('assigns sequential ids to events', () => {

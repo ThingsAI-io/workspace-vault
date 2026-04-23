@@ -33,11 +33,17 @@ export class VaultEngine {
   private vaultPath: string;
   private filesDir: string;
 
-  constructor(vaultPath: string) {
+  private constructor(vaultPath: string, store: MetadataStore, audit: AuditLogger) {
     this.vaultPath = vaultPath;
     this.filesDir = path.join(vaultPath, 'files');
-    this.store = new MetadataStore(path.join(vaultPath, 'vault.db'));
-    this.audit = new AuditLogger(path.join(vaultPath, 'audit.db'));
+    this.store = store;
+    this.audit = audit;
+  }
+
+  static async open(vaultPath: string): Promise<VaultEngine> {
+    const store = await MetadataStore.create(path.join(vaultPath, 'vault.db'));
+    const audit = await AuditLogger.create(path.join(vaultPath, 'audit.db'));
+    return new VaultEngine(vaultPath, store, audit);
   }
 
   // ── Init ────────────────────────────────────────────────────────────
@@ -61,7 +67,7 @@ export class VaultEngine {
     const wrappedKey = await wrapMasterKeyWithPassphrase(privateKey, identity);
 
     // 4. Create engine and store initial key
-    const engine = new VaultEngine(vaultPath);
+    const engine = await VaultEngine.open(vaultPath);
     engine.store.insertKey({
       id: randomUUID(),
       label: 'primary passphrase',

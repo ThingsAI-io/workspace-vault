@@ -14,8 +14,8 @@ function getConfig(): ConfigManager {
   return new ConfigManager();
 }
 
-function getEngine(config: ConfigManager): VaultEngine {
-  return new VaultEngine(config.getVaultPath());
+async function getEngine(config: ConfigManager): Promise<VaultEngine> {
+  return VaultEngine.open(config.getVaultPath());
 }
 
 function getSession(config: ConfigManager): SessionManager {
@@ -104,7 +104,7 @@ export async function unlockCommand(): Promise<void> {
   }
 
   const passphrase = await promptPassphrase();
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
   try {
     const masterKey = await engine.unlock(passphrase);
     session.writeSession(masterKey);
@@ -123,7 +123,7 @@ export function lockCommand(): void {
   process.stderr.write('Vault locked.\n');
 }
 
-export function statusCommand(): void {
+export async function statusCommand(): Promise<void> {
   const config = getConfig();
   if (!config.isInitialized()) {
     process.stderr.write('Vault not initialized. Run `vault init` first.\n');
@@ -131,7 +131,7 @@ export function statusCommand(): void {
   }
 
   const session = getSession(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
   try {
     const isUnlocked = session.isUnlocked();
     const status = engine.getStatus(isUnlocked);
@@ -159,7 +159,7 @@ export async function writeCommand(
   requireInit(config);
   const session = getSession(config);
   const masterKey = requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     let content: Buffer;
@@ -184,7 +184,7 @@ export async function readCommand(vaultPath: string): Promise<void> {
   requireInit(config);
   const session = getSession(config);
   const masterKey = requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const content = await engine.readFile(vaultPath, masterKey);
@@ -199,7 +199,7 @@ export async function deleteCommand(vaultPath: string): Promise<void> {
   requireInit(config);
   const session = getSession(config);
   requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     await engine.deleteFile(vaultPath);
@@ -209,10 +209,10 @@ export async function deleteCommand(vaultPath: string): Promise<void> {
   }
 }
 
-export function listCommand(vaultPath?: string): void {
+export async function listCommand(vaultPath?: string): Promise<void> {
   const config = getConfig();
   requireInit(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const files = engine.listFiles(vaultPath);
@@ -236,10 +236,10 @@ export function listCommand(vaultPath?: string): void {
   }
 }
 
-export function searchCommand(query: string): void {
+export async function searchCommand(query: string): Promise<void> {
   const config = getConfig();
   requireInit(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const results = engine.searchFiles(query);
@@ -260,7 +260,7 @@ export async function grepCommand(pattern: string): Promise<void> {
   requireInit(config);
   const session = getSession(config);
   const masterKey = requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const results = await engine.grepFiles(pattern, masterKey);
@@ -281,7 +281,7 @@ export async function keyAddCommand(): Promise<void> {
   requireInit(config);
   const session = getSession(config);
   const masterKey = requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const passphrase = await promptPassphraseConfirm();
@@ -310,10 +310,10 @@ export async function keyAddCommand(): Promise<void> {
   }
 }
 
-export function keyListCommand(): void {
+export async function keyListCommand(): Promise<void> {
   const config = getConfig();
   requireInit(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const keys = engine.listKeys();
@@ -331,12 +331,12 @@ export function keyListCommand(): void {
   }
 }
 
-export function keyRevokeCommand(keyId: string): void {
+export async function keyRevokeCommand(keyId: string): Promise<void> {
   const config = getConfig();
   requireInit(config);
   const session = getSession(config);
   requireUnlock(session);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     engine.revokeKey(keyId);
@@ -346,10 +346,10 @@ export function keyRevokeCommand(keyId: string): void {
   }
 }
 
-export function auditCommand(options: { tail?: string; operation?: string }): void {
+export async function auditCommand(options: { tail?: string; operation?: string }): Promise<void> {
   const config = getConfig();
   requireInit(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
 
   try {
     const limit = options.tail ? parseInt(options.tail, 10) : undefined;
@@ -377,7 +377,7 @@ export function auditCommand(options: { tail?: string; operation?: string }): vo
 export async function mcpCommand(): Promise<void> {
   const config = getConfig();
   requireInit(config);
-  const engine = getEngine(config);
+  const engine = await getEngine(config);
   const session = getSession(config);
 
   const { createVaultMcpServer } = await import('../mcp/index.js');
