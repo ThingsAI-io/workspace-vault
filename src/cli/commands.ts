@@ -94,8 +94,8 @@ export async function initCommand(vaultPath?: string): Promise<void> {
       `{\n` +
       `  "mcpServers": {\n` +
       `    "workspace-vault": {\n` +
-      `      "command": "npx",\n` +
-      `      "args": ["workspace-vault", "mcp"]\n` +
+      `      "command": "vault",\n` +
+      `      "args": ["mcp"]\n` +
       `    }\n` +
       `  }\n` +
       `}\n`,
