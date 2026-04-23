@@ -90,7 +90,7 @@ export class VaultEngine {
   async writeFile(
     vaultFilePath: string,
     content: Buffer,
-    _masterKey: string,
+    masterKey: string,
     tags?: string[],
   ): Promise<FileMetadata> {
     this.validatePath(vaultFilePath);
@@ -99,7 +99,9 @@ export class VaultEngine {
       throw new FileAlreadyExistsError(`File already exists: ${vaultFilePath}`);
     }
 
-    const publicKey = this.getMasterPublicKey();
+    // Encrypt using the master public key derived from the provided master key
+    const { identityToRecipient } = await import('age-encryption');
+    const publicKey = await identityToRecipient(masterKey);
     const encrypted = await encrypt(content, [publicKey]);
 
     const blobId = randomUUID();
@@ -174,17 +176,38 @@ export class VaultEngine {
   searchFiles(query: string): SearchResult[] {
     const files = this.store.searchFiles(query);
     this.audit.logEvent({ operation: OperationType.SEARCH, success: true });
-    return files.map((f) => ({
-      vaultPath: f.vaultPath,
-      matchType: 'filename' as const,
-      matchedValue: f.vaultPath,
-    }));
+    const lowerQuery = query.toLowerCase();
+    return files.map((f) => {
+      const tagMatch = f.tags.find((t) => t.toLowerCase().includes(lowerQuery));
+      if (tagMatch) {
+        return { vaultPath: f.vaultPath, matchType: 'tag' as const, matchedValue: tagMatch };
+      }
+      return {
+        vaultPath: f.vaultPath,
+        matchType: 'filename' as const,
+        matchedValue: path.basename(f.vaultPath),
+      };
+    });
   }
 
   async grepFiles(pattern: string, masterKey: string): Promise<GrepResult[]> {
+    // Validate pattern
+    if (pattern.includes('\0')) {
+      throw new Error('Search pattern contains null bytes');
+    }
+    if (pattern.length > 1000) {
+      throw new Error('Search pattern too long (max 1000 characters)');
+    }
+
+    let regex: RegExp;
+    try {
+      regex = new RegExp(pattern, 'gi');
+    } catch {
+      throw new Error(`Invalid search pattern: ${pattern}`);
+    }
+
     const allFiles = this.store.getAllFiles();
     const results: GrepResult[] = [];
-    const regex = new RegExp(pattern, 'gi');
 
     for (const file of allFiles) {
       try {

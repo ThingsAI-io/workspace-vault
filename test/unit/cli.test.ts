@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -10,21 +10,16 @@ const CLI_PATH = path.resolve('dist/cli/index.js');
 const TEST_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'vault-cli-test-'));
 
 function run(args: string[]): { stdout: string; stderr: string; exitCode: number } {
-  try {
-    const stdout = execFileSync('node', [CLI_PATH, ...args], {
-      encoding: 'utf-8',
-      timeout: 10_000,
-      env: { ...process.env, NODE_NO_WARNINGS: '1', WORKSPACE_VAULT_CONFIG_DIR: TEST_CONFIG_DIR },
-    });
-    return { stdout, stderr: '', exitCode: 0 };
-  } catch (err) {
-    const e = err as { stdout?: string; stderr?: string; status?: number };
-    return {
-      stdout: e.stdout ?? '',
-      stderr: e.stderr ?? '',
-      exitCode: e.status ?? 1,
-    };
-  }
+  const result = spawnSync('node', [CLI_PATH, ...args], {
+    encoding: 'utf-8',
+    timeout: 10_000,
+    env: { ...process.env, NODE_NO_WARNINGS: '1', WORKSPACE_VAULT_CONFIG_DIR: TEST_CONFIG_DIR },
+  });
+  return {
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+    exitCode: result.status ?? 1,
+  };
 }
 
 describe('CLI command registration', () => {
@@ -62,9 +57,8 @@ describe('CLI command registration', () => {
 describe('CLI error handling', () => {
   it('should fail gracefully for status when vault is not initialized', () => {
     const { stderr, exitCode } = run(['status']);
-    // Status prints a message but doesn't exit 1 when not initialized
-    expect(stderr + '').toContain('');
-    expect(typeof exitCode).toBe('number');
+    expect(exitCode).toBe(0);
+    expect(stderr).toContain('not initialized');
   });
 
   it('should fail gracefully for lock when vault is not initialized', () => {

@@ -34,7 +34,24 @@ export class SessionManager {
     const tempPath = `${this.sessionPath}.tmp`;
     fs.writeFileSync(tempPath, JSON.stringify(data), 'utf-8');
     setRestrictivePermissions(tempPath, 'file');
-    fs.renameSync(tempPath, this.sessionPath);
+
+    try {
+      if (process.platform === 'win32' && fs.existsSync(this.sessionPath)) {
+        try {
+          fs.unlinkSync(this.sessionPath);
+        } catch {
+          // Let renameSync surface the real error
+        }
+      }
+      fs.renameSync(tempPath, this.sessionPath);
+    } catch (err) {
+      try {
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      } catch {
+        // Ignore temp cleanup failures
+      }
+      throw err;
+    }
   }
 
   /**

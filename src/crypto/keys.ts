@@ -62,19 +62,19 @@ export async function wrapMasterKey(
 
 /**
  * Unwrap (decrypt) a master key's private key using an identity string.
- * If the identity starts with "passphrase:", it was created via
- * passphraseToIdentity and we use passphrase-based decryption.
+ * Native age identities use the AGE-SECRET-KEY-... format. Passphrase-based
+ * identities are the opaque combined passphrase+salt strings returned by
+ * passphraseToIdentity (formatted as `${passphrase}:${salt}`), and are
+ * decrypted with passphrase-based decryption.
  */
 export async function unwrapMasterKey(wrappedKey: Buffer, identity: string): Promise<string> {
   try {
-    // If this is a passphrase-derived identity (from passphraseToIdentity),
-    // use passphrase-based decryption.
-    if (identity.includes(':')) {
-      const plaintext = await decryptWithPassphrase(wrappedKey, identity);
+    if (identity.startsWith('AGE-SECRET-KEY-')) {
+      const plaintext = await decrypt(wrappedKey, identity);
       return plaintext.toString('utf-8');
     }
-    // Otherwise it's a native age identity (AGE-SECRET-KEY-1...)
-    const plaintext = await decrypt(wrappedKey, identity);
+    // Passphrase-derived identity from passphraseToIdentity
+    const plaintext = await decryptWithPassphrase(wrappedKey, identity);
     return plaintext.toString('utf-8');
   } catch (err) {
     if (err instanceof InvalidKeyError) throw err;

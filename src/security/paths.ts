@@ -19,7 +19,12 @@ export function validateVaultPath(userPath: string, vaultRoot: string): string {
     throw new PathTraversalError('Path contains null bytes');
   }
 
-  // 2. Normalize the vault root to a resolved absolute path
+  // 2. Reject absolute paths — vault paths must be relative
+  if (path.isAbsolute(userPath)) {
+    throw new PathTraversalError(`Path "${userPath}" must be relative to vault root`);
+  }
+
+  // 3. Normalize the vault root to a resolved absolute path
   const resolvedRoot = path.resolve(vaultRoot);
 
   // 3. Join vaultRoot + userPath, resolve to absolute
