@@ -117,7 +117,7 @@ See [spec/security.md](spec/security.md) for the full security model.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - macOS, Linux, or Windows
 
 ## License
